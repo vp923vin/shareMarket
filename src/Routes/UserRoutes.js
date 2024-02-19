@@ -3,10 +3,11 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser')
 const User = require('../Models/UserModel');
+const cors = require('cors'); 
 const { register_user, login_user, logout_user } = require('../Controllers/Users/UserController');
 
 const user_router = express.Router();
-
+user_router.use(cors());
 user_router.use(bodyParser.json());
 user_router.use(express.json());
 
