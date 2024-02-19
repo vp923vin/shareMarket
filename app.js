@@ -8,7 +8,8 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 // Middleware
-app.use("/api/v1/", user_router)
+app.use("/api", user_router)
+
 app.use(bodyParser.json());
 app.use(express.json());
 

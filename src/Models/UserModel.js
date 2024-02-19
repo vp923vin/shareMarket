@@ -6,8 +6,8 @@ const userSchema = new mongoose.Schema({
   Email: { type: String, required: true, unique: true },
   LastLogin: { type: Date },
   Phone: { type: String, required: true },
-  Address: { type: String, required: true },
-  AccountBalance: { type: Number, required: true },
+  Address: { type: String, default: null },
+  AccountBalance: { type: Number, default: 0 },
   Role: { type: String, enum: ['user', 'admin'], default: 'user' }
 });
 

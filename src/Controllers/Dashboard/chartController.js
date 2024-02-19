@@ -1,0 +1,1 @@
+// here market data chart controller methods
