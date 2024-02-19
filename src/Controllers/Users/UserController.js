@@ -75,7 +75,41 @@ const login_user = async (req, res) => {
     }
 }
 
+const logout_user = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1]; 
+        if (!token) {
+            res.status(401).json({ 
+                status: false, 
+                message: 'Unauthorized request.' 
+            });
+
+        }
+
+        const decodedToken = verifyToken(token);
+        if(!decodedToken){
+            res.status(400).json({ 
+                status: false, 
+                message: 'Invalid Token Unable to logout.' 
+            });
+        }
+
+        res.status(200).json({ 
+            status: true, 
+            message: 'Logout successful' 
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Internal Server Error.' 
+        });
+    }
+}
+
+
 module.exports = {
     register_user,
-    login_user
+    login_user,
+    logout_user
 }
