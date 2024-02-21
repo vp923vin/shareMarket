@@ -1,1 +1,1 @@
-// here market controller methods
+// market controller methods to fetch market Data
