@@ -10,8 +10,9 @@ const port = 3000;
 // Middleware to parse request body
 app.use(bodyParser.urlencoded({ extended: true }));
 
+const appBaseUri = process.env.APP_BASE_URL
 // Redirect URL where Zerodha will redirect after authentication
-const redirectUri = 'http://localhost:3000/api/callback';
+const redirectUri = `${appBaseUri}api/callback`;
 
 // API key and secret obtained from Zerodha developer dashboard
 const apiKey = process.env.UPSTOX_API_KEY;
