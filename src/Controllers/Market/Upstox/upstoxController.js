@@ -17,7 +17,7 @@ const redirectUri = `${appBaseUri}api/callback`;
 // API key and secret obtained from Zerodha developer dashboard
 const apiKey = process.env.UPSTOX_API_KEY;
 const apiSecret = process.env.UPSTOX_API_SECERET_KEY;
-
+const grantType = "authorization_code";
 
 const upstoxRedirect = (req, res) => {
     const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${redirectUri}`;
@@ -28,21 +28,22 @@ const upstoxRedirect = (req, res) => {
 // Route to handle OAuth2 callback
 const upstoxCallBack = async (req, res) => {
     try {
-        const { request_token } = req.query;
+        const { code } = req.query;
 
         // Exchange request token for access token
-        const response = await axios.post('https://api.kite.trade/session/token', querystring.stringify({
-            api_key: apiKey,
-            request_token,
-            checksum: apiSecret // Use your API secret as checksum
+        const response = await axios.post('https://api.upstox.com/v2/login/authorization/token', querystring.stringify({
+            code: code,
+            client_id: apiKey,
+            client_secret: apiSecret,
+            redirect_uri: redirectUri,
+            grant_type: grantType
         }));
 
-        const accessToken = response.data.access_token;
-        console.log('Access Token:', accessToken);
-
-        // Now you have the access token, you can use it to make authenticated API requests
-
-        res.send('Authentication successful!');
+        return res.status(200).json({
+            status: true,
+            message: "succesfully get Token",
+            data: response
+        });
     } catch (error) {
         console.error('Error:', error.response ? error.response.data : error.message);
         res.status(500).send('Internal Server Error');
