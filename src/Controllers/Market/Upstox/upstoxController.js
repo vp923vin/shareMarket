@@ -29,7 +29,9 @@ const upstoxRedirect = (req, res) => {
 const upstoxCallBack = async (req, res) => {
     try {
         const { code } = req.query;
-
+        return res.json({
+            code: code,
+        })
         // Exchange request token for access token
         const response = await axios.post('https://api.upstox.com/v2/login/authorization/token', querystring.stringify({
             code: code,
