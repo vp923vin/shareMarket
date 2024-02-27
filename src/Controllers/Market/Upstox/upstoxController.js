@@ -4,8 +4,8 @@ const axios = require('axios');
 const appBaseUri = process.env.APP_BASE_URL
 
 // Redirect URL where Zerodha will redirect after authentication
-const redirectUri = `${appBaseUri}/api/callback`;
-const requestUri = `${appBaseUri}/api/getUpstoxResult`;
+const redirectUri = `${appBaseUri}/api`;
+
 
 // API key and secret obtained from Zerodha developer dashboard
 const apiKey = process.env.UPSTOX_API_KEY;
@@ -24,7 +24,7 @@ const upstoxCallBack = async (req, res) => {
         const { code } = req.query;
         const apiUpstoxUrl = `https://api.upstox.com/v2/login/authorization/token?code=${code}&client_id=${apiKey}&client_secret=${apiSecret}&redirect_uri=${redirectUri}&grant_type=authorization_code`;
         // Exchange request token for access token
-        const payload = {}
+        const payload = {};
         const headers = {
             'accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -44,18 +44,7 @@ const upstoxCallBack = async (req, res) => {
 }
 
 
-const upstoxFinalCallback = (req, res) => {
-    const {data} = req.body;
-    return res.status(200).json({
-        "status": true,
-        "message": "check the user",
-        "responseData": data
-    });
-}
-
-
 module.exports = {
     upstoxRedirect,
     upstoxCallBack,
-    upstoxFinalCallback
 }
