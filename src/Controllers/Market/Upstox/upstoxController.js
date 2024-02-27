@@ -1,18 +1,10 @@
 require('dotenv').config();
-const express = require('express');
 const axios = require('axios');
-const bodyParser = require('body-parser');
-const querystring = require('querystring');
-
-const app = express();
-const port = 3000;
-
-// Middleware to parse request body
-app.use(bodyParser.urlencoded({ extended: true }));
 
 const appBaseUri = process.env.APP_BASE_URL
+
 // Redirect URL where Zerodha will redirect after authentication
-const redirectUri = `${appBaseUri}api/callback`;
+const redirectUri = `${appBaseUri}/api/callback`;
 
 // API key and secret obtained from Zerodha developer dashboard
 const apiKey = process.env.UPSTOX_API_KEY;
