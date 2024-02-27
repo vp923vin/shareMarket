@@ -24,6 +24,7 @@ const upstoxCallBack = async (req, res) => {
         const { code } = req.query;
         const apiUpstoxUrl = `https://api.upstox.com/v2/login/authorization/token?code=${code}&client_id=${apiKey}&client_secret=${apiSecret}&redirect_uri=${requestUri}&grant_type=authorization_code`;
         // Exchange request token for access token
+        console.log("request url --->", requestUri);
         const payload = {}
         const headers = {
             'accept': 'application/json',
