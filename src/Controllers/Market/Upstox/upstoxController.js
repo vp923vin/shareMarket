@@ -12,7 +12,7 @@ const apiSecret = process.env.UPSTOX_API_SECERET_KEY;
 const grantType = "authorization_code";
 
 const upstoxRedirect = (req, res) => {
-    const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${redirectUri}`;
+    const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${appBaseUri}/api/callback`;
     res.redirect(authUrl);
 }
 
@@ -21,17 +21,13 @@ const upstoxRedirect = (req, res) => {
 const upstoxCallBack = async (req, res) => {
     try {
         const { code } = req.query;
-        return res.json({
-            code: code,
-        })
+        const apiUpstoxUrl = `https://api.upstox.com/v2/login/authorization/token?code=${code}&client_id=${apiKey}&client_secret=${apiSecret}&redirect_uri=${appBaseUri}/api/getUpstoxResult&grant_type=authorization_code`;
         // Exchange request token for access token
-        const response = await axios.post('https://api.upstox.com/v2/login/authorization/token', querystring.stringify({
-            code: code,
-            client_id: apiKey,
-            client_secret: apiSecret,
-            redirect_uri: redirectUri,
-            grant_type: grantType
-        }));
+        const headers = {
+            'accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        const response = await axios.post(apiUpstoxUrl, payload, { headers });
 
         return res.status(200).json({
             status: true,
@@ -46,7 +42,13 @@ const upstoxCallBack = async (req, res) => {
 }
 
 
+const upstoxFinalCallback = (req, res) => {
+    return res;
+}
+
+
 module.exports = {
     upstoxRedirect,
-    upstoxCallBack
+    upstoxCallBack,
+    upstoxFinalCallback
 }
