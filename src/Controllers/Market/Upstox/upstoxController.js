@@ -5,6 +5,7 @@ const appBaseUri = process.env.APP_BASE_URL
 
 // Redirect URL where Zerodha will redirect after authentication
 const redirectUri = `${appBaseUri}/api/callback`;
+const requestUri = `${appBaseUri}/api/getUpstoxResult`;
 
 // API key and secret obtained from Zerodha developer dashboard
 const apiKey = process.env.UPSTOX_API_KEY;
@@ -12,7 +13,7 @@ const apiSecret = process.env.UPSTOX_API_SECERET_KEY;
 const grantType = "authorization_code";
 
 const upstoxRedirect = (req, res) => {
-    const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${appBaseUri}/api/callback`;
+    const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${redirectUri}`;
     res.redirect(authUrl);
 }
 
@@ -21,7 +22,7 @@ const upstoxRedirect = (req, res) => {
 const upstoxCallBack = async (req, res) => {
     try {
         const { code } = req.query;
-        const apiUpstoxUrl = `https://api.upstox.com/v2/login/authorization/token?code=${code}&client_id=${apiKey}&client_secret=${apiSecret}&redirect_uri=${appBaseUri}/api/getUpstoxResult&grant_type=authorization_code`;
+        const apiUpstoxUrl = `https://api.upstox.com/v2/login/authorization/token?code=${code}&client_id=${apiKey}&client_secret=${apiSecret}&redirect_uri=${requestUri}&grant_type=authorization_code`;
         // Exchange request token for access token
         const payload = {}
         const headers = {
@@ -44,7 +45,12 @@ const upstoxCallBack = async (req, res) => {
 
 
 const upstoxFinalCallback = (req, res) => {
-    return res;
+    const {data} = req.body;
+    return res.status(200).json({
+        "status": true,
+        "message": "check the user",
+        "responseData": data
+    });
 }
 
 
