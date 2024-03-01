@@ -16,7 +16,7 @@ const upstoxCallBack = async (req, res) => {
     try {
         const { code } = req.query;
         const apiUpstoxUrl = `https://api.upstox.com/v2/login/authorization/token?code=${code}&client_id=${apiKey}&client_secret=${apiSecret}&redirect_uri=${redirectUri}&grant_type=authorization_code`;
-        
+
         const payload = {};
         const headers = {
             'accept': 'application/json',
@@ -75,8 +75,35 @@ const upstoxGetQueryCode = async (req, res) => {
     }
 }
 
+
+const upstoxMarketData = (req, res) => {
+    const accessToken = 'eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI0MjcxNzIiLCJqdGkiOiI2NWUxYWY2NzQ1NzRjZDA5NDI0YWY1MmEiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNBY3RpdmUiOnRydWUsInNjb3BlIjpbImludGVyYWN0aXZlIiwiaGlzdG9yaWNhbCJdLCJpYXQiOjE3MDkyODkzMTksImlzcyI6InVkYXBpLWdhdGV3YXktc2VydmljZSIsImV4cCI6MTcwOTMzMDQwMH0.4SLnrTJwVFyhaj7J7QwsycqefBY5nuibMO7q5yZJk68'
+    const instrumentKey = 'NSE_EQ%7CINE848E01016,NSE_EQ|IN1720230029,NSE_EQ|INE669E01016,NSE_EQ|IN1920220085,NSE_EQ|IN2920230223,NSE_EQ|IN3620230034,NSE_EQ|IN1020220597'
+    let config = {
+        method: 'get',
+        maxBodyLength: Infinity,
+        url: `https://api.upstox.com/v2/market-quote/quotes?instrument_key=${instrumentKey}`,
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + accessToken,
+        }
+    };
+
+    axios(config)
+        .then((response) => {
+            // Send the JSON response data back to the client
+            res.json(response.data);
+        })
+        .catch((error) => {
+            // Handle errors
+            console.log(error);
+            res.status(500).json({ error: 'Internal Server Error' }); // Send an error response
+        });
+}
+
 module.exports = {
     upstoxRedirect,
     upstoxCallBack,
-    upstoxGetQueryCode
+    upstoxGetQueryCode,
+    upstoxMarketData
 }
