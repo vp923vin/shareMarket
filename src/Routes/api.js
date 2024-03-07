@@ -21,6 +21,9 @@ const {
     initializeAndConnect,
 } = require('../Controllers/websocketController');
 
+const {
+    getPaginatedData
+} = require('../Controllers/Market/handleMarketController');
 
 
 
@@ -44,5 +47,6 @@ router.get('/auth', upstoxRedirect);
 router.get('/callback', upstoxCallBack);
 router.get('/market-data', upstoxMarketData);
 router.get('/websocket-data', initializeAndConnect);
+router.get('/market/exchanges/:exchange', getPaginatedData)
 
 module.exports = { apiRoutes: router };
