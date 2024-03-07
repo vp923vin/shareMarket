@@ -75,6 +75,10 @@ UpstoxAccessSchema.statics.upsertAccessToken = async function(
     }
 };
 
+
+
+
+
 // Create and export the UpstoxAccess model
 const UpstoxAccess = mongoose.model('UpstoxAccess', UpstoxAccessSchema);
 module.exports = UpstoxAccess;
