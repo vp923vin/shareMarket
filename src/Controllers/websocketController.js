@@ -1,16 +1,22 @@
-const express = require('express');
-const http = require('http');
-const UpstoxClient = require('upstox-js-sdk');
-const { WebSocket } = require('ws');
-const protobuf = require('protobufjs');
-const { getAccessToken } = require('../Utiles/fetchAccessToken');
+const express = require("express");
+const http = require("http");
+const UpstoxClient = require("upstox-js-sdk");
+const { WebSocket } = require("ws");
+const protobuf = require("protobufjs");
+const mongoose = require("mongoose");
+const { getAccessToken } = require("../Utiles/fetchAccessToken");
+const InstrumentKeys = mongoose.model("InstrumentKeys", {});
+const socketIo = require("socket.io");
+
+let instrumentKeysArray = [];
 
 const app = express();
 const server = http.createServer(app);
+const io = socketIo(server);
 const wss = new WebSocket.Server({ server });
 
 let protobufRoot = null;
-let apiVersion = '2.0';
+let apiVersion = "2.0";
 
 // Function to authorize the market data feed
 const getMarketFeedUrl = async (accessToken) => {
@@ -19,13 +25,13 @@ const getMarketFeedUrl = async (accessToken) => {
     let OAUTH2 = defaultClient.authentications["OAUTH2"];
     OAUTH2.accessToken = accessToken;
 
-    let apiInstance = new UpstoxClient.WebsocketApi(); // Create new Websocket API instance
+    let apiInstance = new UpstoxClient.WebsocketApi();
     // Call the getMarketDataFeedAuthorize function from the API
     apiInstance.getMarketDataFeedAuthorize(
       apiVersion,
       (error, data, response) => {
-        if (error) reject(error); // If there's an error, reject the promise
-        else resolve(data.data.authorizedRedirectUri); // Else, resolve the promise with the authorized URL
+        if (error) reject(error);
+        else resolve(data.data.authorizedRedirectUri);
       }
     );
   });
@@ -33,9 +39,24 @@ const getMarketFeedUrl = async (accessToken) => {
 
 // Function to initialize the protobuf part
 const initProtobuf = async () => {
-  protobufRoot = await protobuf.load(__dirname + '/MarketDataFeed.proto');
-  console.log('Protobuf part initialization complete');
+  protobufRoot = await protobuf.load(__dirname + "/MarketDataFeed.proto");
+  console.log("Protobuf part initialization complete");
 };
+
+const instrument_key_data_function = async () => {
+  try {
+    const allKeys = await InstrumentKeys.find({});
+    const stringKey = JSON.stringify(allKeys);
+    const parseKey = JSON.parse(stringKey);
+    instrumentKeysArray = parseKey.map((key) => key.instrument_key);
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
+
+setInterval(async () => {
+  await instrument_key_data_function();
+}, 2000);
 
 
 const connectWebSocket = async (wsUrl, accessToken) => {
@@ -48,19 +69,16 @@ const connectWebSocket = async (wsUrl, accessToken) => {
       followRedirects: true,
     });
 
-    // WebSocket event handlers
     ws.on("open", () => {
       console.log("connected");
-      resolve(ws); // Resolve the promise once connected
-
-      // Set a timeout to send a subscription message after 1 second
+      resolve(ws);
       setTimeout(() => {
         const data = {
           guid: "someguid",
           method: "sub",
           data: {
             mode: "full",
-            instrumentKeys: ["NSE_INDEX|Nifty Bank", "NSE_INDEX|Nifty 50", "NSE_EQ|INE002A01018"],
+            instrumentKeys: instrumentKeysArray,
           },
         };
         ws.send(Buffer.from(JSON.stringify(data)));
@@ -71,28 +89,74 @@ const connectWebSocket = async (wsUrl, accessToken) => {
       console.log("disconnected");
     });
 
-    ws.on("message", (data) => {
-      let socketData = JSON.stringify(decodeProtobuf(data))
-      sendDataToClients(socketData);
-      console.log(socketData); // Decode the protobuf message on receiving it
+    io.on("connection", (socket) => {
+      console.log("A user connected");
+      // Emit initial data or do other operations upon connection if needed
     });
+
+    ws.on("message", (data) => {
+      let socketData = JSON.stringify(decodeProtobuf(data));
+      sendDataToClients(socketData);
+
+      let dataWithShareNames = addShareNames(socketData);
+
+      io.emit("message", socketData);
+
+      console.log(dataWithShareNames);
+    });
+
+
+    function addShareNames(data) {
+      // Clone the original data to avoid mutation
+      let newData = JSON.parse(JSON.stringify(data));
+      // Loop through each instrument key in the data and add share names
+      for (let key in newData.feeds) {
+          if (newData.feeds.hasOwnProperty(key)) {
+              newData.feeds[key].shareName = instrumentKeyToShareName[key] || "Unknown"; // If share name is not found, set as "Unknown"
+          }
+      }
+      return newData;
+  }
+
+    function sendInstrumentKeys() {
+      const data = {
+        guid: "someguid",
+        method: "sub",
+        data: {
+          mode: "full",
+          instrumentKeys: instrumentKeysArray,
+        },
+      };
+      ws.send(Buffer.from(JSON.stringify(data)));
+    }
+
+    // Update instrumentKeysArray dynamically
+    function updateInstrumentKeys(newKeys) {
+      instrumentKeysArray = newKeys;
+      sendInstrumentKeys();
+    }
+
+    setInterval(() => {
+      updateInstrumentKeys(instrumentKeysArray);
+    }, 1000);
 
     ws.on("error", (error) => {
       console.log("error:", error);
-      reject(error); // Reject the promise on error
+      reject(error);
     });
   });
 };
 
-
 // Function to decode protobuf message
 const decodeProtobuf = (buffer) => {
   if (!protobufRoot) {
-    console.warn('Protobuf part not initialized yet!');
+    console.warn("Protobuf part not initialized yet!");
     return null;
   }
 
-  const FeedResponse = protobufRoot.lookupType('com.upstox.marketdatafeeder.rpc.proto.FeedResponse');
+  const FeedResponse = protobufRoot.lookupType(
+    "com.upstox.marketdatafeeder.rpc.proto.FeedResponse"
+  );
   return FeedResponse.decode(buffer);
 };
 
@@ -102,10 +166,10 @@ const initializeAndConnect = async () => {
     await initProtobuf(); // Initialize protobuf
     const accessToken = await getAccessToken();
     const wsUrl = await getMarketFeedUrl(accessToken);
-    const ws = await connectWebSocket(wsUrl, accessToken); // Connect to the WebSocket
+    const ws = await connectWebSocket(wsUrl, accessToken);
     return ws;
   } catch (error) {
-    console.error('An error occurred:', error);
+    console.error("An error occurred:", error);
     throw error;
   }
 };
@@ -120,24 +184,23 @@ const sendDataToClients = (data) => {
 };
 
 // Handle WebSocket connections
-wss.on('connection', (ws) => {
-  console.log('WebSocket client connected');
+wss.on("connection", (ws) => {
+  console.log("WebSocket client connected");
 
-  ws.on('message', (message) => {
+  ws.on("message", (message) => {
     console.log(`Received message from client: ${message}`);
   });
 
-  ws.on('close', () => {
-    console.log('WebSocket client disconnected');
+  ws.on("close", () => {
+    console.log("WebSocket client disconnected");
   });
 });
 
 // Start the server
 server.listen(3001, () => {
-  console.log('Server is running on port 3001');
+  console.log("Server is running on port 3001");
 });
 
-
 module.exports = {
-  initializeAndConnect
-}
+  initializeAndConnect,
+};

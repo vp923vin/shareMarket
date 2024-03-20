@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket Data</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io("http://localhost:3001");
+
+      socket.on("message", (data) => {
+        const dataElement = document.createElement("pre");
+        dataElement.textContent = JSON.stringify(data, null, 2);
+        document.body.appendChild(dataElement);
+      });
+    </script>
+    <!-- <script>
+      const socket = io();
+
+      socket.on("message", (data) => {
+        const dataElement = document.createElement("pre");
+        dataElement.textContent = JSON.stringify(data, null, 2);
+        document.body.appendChild(dataElement);
+      });
+    </script> -->
+  </head>
+  <body>
+    <h1>WebSocket Data</h1>
+  </body>
+</html>
