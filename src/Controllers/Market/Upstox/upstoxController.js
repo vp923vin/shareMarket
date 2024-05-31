@@ -24,7 +24,6 @@ const upstoxCallBack = async (req, res) => {
         }
         const response = await axios.post(apiUpstoxUrl, payload, { headers });
 
-        // Extract only the necessary data from the response
         const responseData = {
             data: response.data
         };
